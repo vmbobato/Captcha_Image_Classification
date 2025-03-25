@@ -8,6 +8,7 @@
 
 import os
 import datetime
+import argparse
 from tensorflow import keras
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras import layers, models
@@ -16,6 +17,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+stamp = datetime.datetime.now().strftime('%Y_%m_%d:%H%M')
 
 class Data_Loader:
     def __init__(self, data_dir, img_size : tuple, batch_size : int, val_split=0.2) -> None:
@@ -117,7 +119,7 @@ class CNN_VGG16:
             print(f"Model saved as {model_name}.keras file.")
         elif file_type == 'tf':
             self.model.save(f"{model_name}")
-            print("Model saved as {model_name} directory.")
+            print(f"Model saved as {model_name} directory.")
         else:
             raise ValueError("Invalid file type. Please use 'h5', 'keras' or 'tf'.")
 
@@ -142,12 +144,13 @@ class Train:
         
         return self.history
     
-    def evaluate(self):
+    def evaluate(self, dataset, save_plot=True):
+        global stamp
         y_true = self.val_data.classes
         y_pred = self.model.predict(self.val_data)
         y_pred = y_pred.argmax(axis=1)
         print(f"Validation Accuracy: {100 * self.history.history['val_accuracy'][-1]:.2f}%")
-        
+
         print("Classification Report")
         print(classification_report(y_true, y_pred, target_names=list(self.val_data.class_indices.keys())))
         c_matrix = confusion_matrix(y_true, y_pred)
@@ -161,11 +164,14 @@ class Train:
         plt.title('Confusion Matrix')
         plt.xlabel('Predicted Label')
         plt.ylabel('True Label')
+        if save_plot:
+            plt.savefig(f"confusion_matrix_{stamp}.png")
         plt.show()
 
 
 def main(dataset_path='dataset_v2/'):
-    model_name = datetime.datetime.now().strftime('%Y_%m_%d:%H%M')+'_VGG16'
+    global stamp
+    model_name = stamp +'_VGG16'
     data_directory = 'dataset_v2/'
     num_classes = len(os.listdir(data_directory))
     image_size = (224, 224)
@@ -181,4 +187,7 @@ def main(dataset_path='dataset_v2/'):
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="VGG16 Model")
+    parser.add_argument("-d", required=True, type=str, help="Path to the dataset")
+    args = parser.parse_args()
+    main(dataset_path=args.d)
