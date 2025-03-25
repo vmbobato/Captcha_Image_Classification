@@ -7,6 +7,7 @@
 
 
 import os
+import re
 import datetime
 import argparse
 from tensorflow import keras
@@ -17,7 +18,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-stamp = datetime.datetime.now().strftime('%Y_%m_%d:%H%M')
+stamp = datetime.datetime.now().strftime('%Y_%m_%d-%H_%M')
 
 class Data_Loader:
     def __init__(self, data_dir, img_size : tuple, batch_size : int, val_split=0.2) -> None:
@@ -144,7 +145,7 @@ class Train:
         
         return self.history
     
-    def evaluate(self, dataset, save_plot=True):
+    def evaluate(self, output_file_name : str, save_plot : bool):
         global stamp
         y_true = self.val_data.classes
         y_pred = self.model.predict(self.val_data)
@@ -165,13 +166,24 @@ class Train:
         plt.xlabel('Predicted Label')
         plt.ylabel('True Label')
         if save_plot:
-            plt.savefig(f"confusion_matrix_{stamp}.png")
+            plt.savefig(output_file_name)
         plt.show()
 
 
-def main(dataset_path):
+def main(dataset_path, save_plot : bool):
     global stamp
     model_name = stamp +'_VGG16'
+    cleaned_path = re.sub(r'[\\/]', '', dataset_path)
+    output_file_name = f"{stamp}_confusion_matrix_{cleaned_path}.png"
+    
+    print("\n-------------------------------Model Info----------------------------------")
+    print(f"Model Name     : {model_name}")
+    print(f"Dataset Path   : {dataset_path}") 
+    print(f"Save CM        : {save_plot}") 
+    print(f"CM Name        : {output_file_name}")
+    print(f"Classes        : {os.listdir(dataset_path)}")
+    print("---------------------------------------------------------------------------\n")
+    
     num_classes = len(os.listdir(dataset_path))
     image_size = (224, 224)
     batch_size = 32
@@ -182,11 +194,13 @@ def main(dataset_path):
     train = Train(model, train_data, val_data, epochs=10)
     history = train.train()
     cnn_model.save_model(model_name, file_type='keras')
-    train.evaluate()
+    train.evaluate(output_file_name, save_plot)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="VGG16 Model")
     parser.add_argument("-d", required=True, type=str, help="Path to the dataset")
+    parser.add_argument("-s", action="store_true", help="Save Confusion Matrix")
     args = parser.parse_args()
-    main(dataset_path=args.d)
+
+    main(dataset_path=args.d, save_plot=args.s)
