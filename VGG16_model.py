@@ -169,14 +169,13 @@ class Train:
         plt.show()
 
 
-def main(dataset_path='dataset_v2/'):
+def main(dataset_path):
     global stamp
     model_name = stamp +'_VGG16'
-    data_directory = 'dataset_v2/'
-    num_classes = len(os.listdir(data_directory))
+    num_classes = len(os.listdir(dataset_path))
     image_size = (224, 224)
     batch_size = 32
-    data_loader = Data_Loader(data_directory, image_size, batch_size)
+    data_loader = Data_Loader(dataset_path, image_size, batch_size)
     train_data, val_data = data_loader.load_data()
     cnn_model = CNN_VGG16(shape=image_size + (3,), num_classes=num_classes)
     model = cnn_model.build_model()
